@@ -1,0 +1,14 @@
+{
+  "name": "com.devknit.metanote",
+  "displayName": "MetaNote",
+  "version": "1.0.0",
+  "unity": "2019.3",
+  "description": "Set and display comments on assets",
+  "keywords": [
+    "asset",
+    "meta",
+    "inspector",
+    "editor"
+  ],
+  "category": "editor extensions"
+}
