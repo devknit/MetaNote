@@ -23,33 +23,42 @@ namespace AssetNote
 				string exportPath = EditorUtility.SaveFilePanelInProject( "Create assets table", "MetaProperty", "md", string.Empty);
 				if( string.IsNullOrEmpty( exportPath) == false)
 				{
-					var table = new Dictionary<string, string[]>
-					{
-						{ kAssetPathKey, new string[ Selection.assetGUIDs.Length] },
-					};
+					var assetPaths = new List<string>();
+					
 					for( int i0 = 0; i0 < Selection.assetGUIDs.Length; ++i0)
 					{
 						string assetPath = AssetDatabase.GUIDToAssetPath( Selection.assetGUIDs[ i0]);
 						if( (assetPath?.Contains( "Assets/") ?? false) != false)
 						{
-							AssetImporter importer = AssetImporter.GetAtPath( assetPath);
+							assetPaths.Add( assetPath);
+						}
+					}
+					assetPaths.Sort();
+					
+					var table = new Dictionary<string, string[]>
+					{
+						{ kAssetPathKey, new string[ Selection.assetGUIDs.Length] },
+					};
+					for( int i0 = 0; i0 < assetPaths.Count; ++i0)
+					{
+						string assetPath = assetPaths[ i0];
+						AssetImporter importer = AssetImporter.GetAtPath( assetPath);
+						
+						if( importer != null)
+						{
+							table[ kAssetPathKey][ i0] = Path.GetFileName( assetPath);
 							
-							if( importer != null)
+							if( string.IsNullOrEmpty( importer.userData) == false)
 							{
-								table[ kAssetPathKey][ i0] = Path.GetFileName( assetPath);
+								UserData userData = JsonUtility.FromJson<UserData>( importer.userData);
 								
-								if( string.IsNullOrEmpty( importer.userData) == false)
+								foreach( var item in userData)
 								{
-									UserData userData = JsonUtility.FromJson<UserData>( importer.userData);
-									
-									foreach( var item in userData)
+									if( table.ContainsKey( item.Key) == false)
 									{
-										if( table.ContainsKey( item.Key) == false)
-										{
-											table.Add( item.Key, new string[ Selection.assetGUIDs.Length]);
-										}
-										table[ item.Key][ i0] = item.Value;
+										table.Add( item.Key, new string[ Selection.assetGUIDs.Length]);
 									}
+									table[ item.Key][ i0] = item.Value;
 								}
 							}
 						}
@@ -60,7 +69,15 @@ namespace AssetNote
 					{
 						table.Remove( string.Empty);
 						var sort = new Dictionary<string, string[]>( table);
-						sort.Add( string.Empty, list);
+						
+						for( int i0 = 0; i0 < list.Length; ++i0)
+						{
+							if( string.IsNullOrWhiteSpace( list[ i0]) == false)
+							{
+								sort.Add( string.Empty, list);
+								break;
+							}
+						}
 						table = sort;
 					}
 					var builder = new StringBuilder();

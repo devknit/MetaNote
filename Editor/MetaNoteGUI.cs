@@ -46,7 +46,7 @@ namespace AssetNote
 							break;
 						}
 					}
-					bool result = Foldout( foldout, "Note", info, out plus, out save);
+					bool result = Foldout( foldout, "Meta", info, out plus, out save);
 					if( foldout != result)
 					{
 						EditorUserSettings.SetConfigValue( "MetaNote.Foldout", result.ToString());
@@ -54,9 +54,9 @@ namespace AssetNote
 					}
 					if( foldout != false)
 					{
-						++EditorGUI.indentLevel;
+						EditorGUILayout.BeginVertical( EditorStyles.helpBox);
 						OnNoteGUI( importer, userData, plus, save);
-						--EditorGUI.indentLevel;
+						EditorGUILayout.EndVertical();
 					}
 				}
 			}
@@ -129,20 +129,15 @@ namespace AssetNote
 			{
 				if( item.Key != string.Empty)
 				{
-					EditorGUI.BeginChangeCheck();
-					Rect itemRect = EditorGUILayout.GetControlRect();
-					Rect textFieldRect = itemRect;
-					textFieldRect.xMax -= 30;
-					userData[ item.Key] = EditorGUI.DelayedTextField( textFieldRect, item.Key, item.Value);
-					if( EditorGUI.EndChangeCheck() != false)
-					{
-						importer.userData = JsonUtility.ToJson( userData, false);
-						saveAndReimport = true;
-					}
-					Rect buttonRect = itemRect;
-					buttonRect.xMin += textFieldRect.width + 4;
+					Rect labelRect = EditorGUILayout.GetControlRect();
 					
-					if( GUI.Button( buttonRect, EditorGUIUtility.TrIconContent( "Toolbar Minus"), "RL FooterButton") != false)
+					EditorGUI.LabelField( labelRect, $"{item.Key}:");
+					
+					if( labelRect.width > 28)
+					{
+						labelRect.xMin += labelRect.width - 28;
+					}
+					if( GUI.Button( labelRect, EditorGUIUtility.TrIconContent( "Toolbar Minus"), "RL FooterButton") != false)
 					{
 						if( userData.ContainsKey( item.Key) != false)
 						{
@@ -151,12 +146,22 @@ namespace AssetNote
 							saveAndReimport = true;
 						}
 					}
+					
+					++EditorGUI.indentLevel;
+					EditorGUI.BeginChangeCheck();
+					userData[ item.Key] = EditorGUILayout.TextArea( item.Value, GUILayout.ExpandHeight( true));
+					if( EditorGUI.EndChangeCheck() != false)
+					{
+						importer.userData = JsonUtility.ToJson( userData, false);
+					}
+					--EditorGUI.indentLevel;
 				}
 			}
+			
+			EditorGUILayout.LabelField( $"Note:");
+			++EditorGUI.indentLevel;
 			EditorGUI.BeginChangeCheck();
-			s_ScrollPos = EditorGUILayout.BeginScrollView( s_ScrollPos,GUILayout.Height( 80));
 			userData[ string.Empty] = EditorGUILayout.TextArea( comment, GUILayout.ExpandHeight( true));
-			EditorGUILayout.EndScrollView();
 			if( EditorGUI.EndChangeCheck() != false)
 			{
 				importer.userData = JsonUtility.ToJson( userData, false);
@@ -176,6 +181,8 @@ namespace AssetNote
 					}
 				});
 			}
+			--EditorGUI.indentLevel;
+			
 			if( save != false)
 			{
 				saveAndReimport = true;
@@ -192,7 +199,5 @@ namespace AssetNote
 				importer.SaveAndReimport();
 			}
 		}
-		
-		static Vector2 s_ScrollPos = default;
 	}
 }
