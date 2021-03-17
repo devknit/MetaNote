@@ -46,7 +46,7 @@ namespace AssetNote
 							break;
 						}
 					}
-					bool result = Foldout( foldout, "Meta", info, out plus, out save);
+					bool result = Foldout( foldout, "Meta", info, importer, out plus, out save);
 					if( foldout != result)
 					{
 						EditorUserSettings.SetConfigValue( "MetaNote.Foldout", result.ToString());
@@ -61,7 +61,7 @@ namespace AssetNote
 				}
 			}
 		}
-		static bool Foldout( bool foldout, string title, bool info, out bool plus, out bool save)
+		static bool Foldout( bool foldout, string title, bool info, AssetImporter importer, out bool plus, out bool save)
 		{
 			plus = false;
 			save = false;
@@ -112,9 +112,12 @@ namespace AssetNote
 				}
 				buttonRect.x -= 26;
 				
-				if( GUI.Button( buttonRect, EditorGUIUtility.TrIconContent( "SaveAs"), "toolbarbutton") != false)
+				if( IsSaveAndReimport( importer) != false)
 				{
-					save = true;
+					if( GUI.Button( buttonRect, EditorGUIUtility.TrIconContent( "SaveAs"), "toolbarbutton") != false)
+					{
+						save = true;
+					}
 				}
 			}
 			return foldout;
@@ -143,6 +146,7 @@ namespace AssetNote
 						{
 							userData.Remove( item.Key);
 							importer.userData = JsonUtility.ToJson( userData, false);
+							EditorUtility.SetDirty( importer);
 							saveAndReimport = true;
 						}
 					}
@@ -153,6 +157,7 @@ namespace AssetNote
 					if( EditorGUI.EndChangeCheck() != false)
 					{
 						importer.userData = JsonUtility.ToJson( userData, false);
+						EditorUtility.SetDirty( importer);
 					}
 					--EditorGUI.indentLevel;
 				}
@@ -165,6 +170,7 @@ namespace AssetNote
 			if( EditorGUI.EndChangeCheck() != false)
 			{
 				importer.userData = JsonUtility.ToJson( userData, false);
+				EditorUtility.SetDirty( importer);
 			}
 			if( plus != false)
 			{
@@ -176,6 +182,7 @@ namespace AssetNote
 						{
 							userData[ newFieldName] = string.Empty;
 							importer.userData = JsonUtility.ToJson( userData, false);
+							EditorUtility.SetDirty( importer);
 							saveAndReimport = true;			
 						}
 					}
@@ -194,10 +201,24 @@ namespace AssetNote
 					if( string.IsNullOrEmpty( userData[ string.Empty]) != false)
 					{
 						importer.userData = string.Empty;
+						EditorUtility.SetDirty( importer);
 					}
 				}
-				importer.SaveAndReimport();
+				if( IsSaveAndReimport( importer) != false)
+				{
+					importer.SaveAndReimport();
+				}
 			}
+		}
+		static bool IsSaveAndReimport( AssetImporter importer)
+		{
+			switch( importer)
+			{
+				/* 何故か ModelImporter で SaveAndReimport を呼ぶと Animation の情報がクリアされる */
+				case ModelImporter modelImporter: return false;
+				case TextureImporter textureImporter: return false;
+			}
+			return true;
 		}
 	}
 }
